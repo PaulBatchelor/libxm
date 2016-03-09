@@ -9,9 +9,6 @@
 #include <xm.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/mman.h>
-#include <sys/stat.h>
-#include <fcntl.h>
 #include <unistd.h>
 
 #define DEBUG(...) do {	  \
@@ -37,31 +34,35 @@
 	} while(0)
 
 static void create_context_from_file(xm_context_t** ctx, uint32_t rate, const char* filename) {
-	int xmfiledes;
-	off_t size;
+	FILE* xmf;
+	int size;
 
-	xmfiledes = open(filename, O_RDONLY);
-	if(xmfiledes == -1) {
+	xmf = fopen(filename, "rb");
+	if(xmf == NULL) {
 		DEBUG_ERR("Could not open input file");
 		*ctx = NULL;
 		return;
 	}
 
-	size = lseek(xmfiledes, 0, SEEK_END);
+	fseek(xmf, 0, SEEK_END);
+	size = ftell(xmf);
+	rewind(xmf);
 	if(size == -1) {
-		close(xmfiledes);
-		DEBUG_ERR("lseek() failed");
+		fclose(xmf);
+		DEBUG_ERR("fseek() failed");
 		*ctx = NULL;
 		return;
 	}
 
-	/* NB: using a VLA here was a bad idea, as the size of the
-	 * module file has no upper bound, whereas the stack has a
-	 * very finite (and usually small) size. Using mmap bypasses
-	 * the issue (at the cost of portability…). */
-	char* data = mmap(NULL, size, PROT_READ, MAP_SHARED, xmfiledes, (off_t)0);
-	if(data == MAP_FAILED)
-		FATAL_ERR("mmap() failed");
+	char* data = malloc(size + 1);
+	if(fread(data, 1, size, xmf) < size) {
+		fclose(xmf);
+		DEBUG_ERR("fread() failed");
+		*ctx = NULL;
+		return;
+	}
+	
+	fclose(xmf);
 
 	switch(xm_create_context_safe(ctx, data, size, rate)) {
 		
@@ -82,7 +83,4 @@ static void create_context_from_file(xm_context_t** ctx, uint32_t rate, const ch
 		break;
 		
 	}
-	
-	munmap(data, size);
-	close(xmfiledes);
 }
