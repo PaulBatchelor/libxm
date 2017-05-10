@@ -5,7 +5,7 @@ LDFLAGS=
 default: libxm.a
 
 %.o: %.c
-	$(CC) $(CFLAGS) -std=c99 -c $< -o $@
+	$(CC) $(CFLAGS) -c $< -o $@
 
 libxm.a: $(OBJ)
 	ar rcs $@ $(OBJ)

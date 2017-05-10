@@ -86,6 +86,7 @@ size_t xm_get_memory_needed_for_context(const char* moddata, size_t moddata_leng
 	uint16_t num_channels;
 	uint16_t num_patterns;
 	uint16_t num_instruments;
+    uint16_t i, j;
 
 	/* Read the module header */
 
@@ -104,7 +105,7 @@ size_t xm_get_memory_needed_for_context(const char* moddata, size_t moddata_leng
 	offset += READ_U32(offset);
 
 	/* Read pattern headers */
-	for(uint16_t i = 0; i < num_patterns; ++i) {
+	for(i = 0; i < num_patterns; ++i) {
 		uint16_t num_rows;
 
 		num_rows = READ_U16(offset + 5);
@@ -115,7 +116,7 @@ size_t xm_get_memory_needed_for_context(const char* moddata, size_t moddata_leng
 	}
 
 	/* Read instrument headers */
-	for(uint16_t i = 0; i < num_instruments; ++i) {
+	for(i = 0; i < num_instruments; ++i) {
 		uint16_t num_samples;
 		uint32_t sample_header_size = 0;
 		uint32_t sample_size_aggregate = 0;
@@ -130,7 +131,7 @@ size_t xm_get_memory_needed_for_context(const char* moddata, size_t moddata_leng
 		/* Instrument header size */
 		offset += READ_U32(offset);
 
-		for(uint16_t j = 0; j < num_samples; ++j) {
+		for(j = 0; j < num_samples; ++j) {
 			uint32_t sample_size;
 			uint8_t flags;
 
@@ -160,6 +161,7 @@ size_t xm_get_memory_needed_for_context(const char* moddata, size_t moddata_leng
 
 char* xm_load_module(xm_context_t* ctx, const char* moddata, size_t moddata_length, char* mempool) {
 	size_t offset = 0;
+    uint16_t i, j, k;
 	xm_module_t* mod = &(ctx->module);
 
 	/* Read XM header */
@@ -192,7 +194,7 @@ char* xm_load_module(xm_context_t* ctx, const char* moddata, size_t moddata_leng
 	offset += header_size;
 	
 	/* Read patterns */
-	for(uint16_t i = 0; i < mod->num_patterns; ++i) {
+	for(i = 0; i < mod->num_patterns; ++i) {
 		uint16_t packed_patterndata_size = READ_U16(offset + 7);
 		xm_pattern_t* pat = mod->patterns + i;
 
@@ -209,7 +211,7 @@ char* xm_load_module(xm_context_t* ctx, const char* moddata, size_t moddata_leng
 			memset(pat->slots, 0, sizeof(xm_pattern_slot_t) * pat->num_rows * mod->num_channels);
 		} else {
 			/* This isn't your typical for loop */
-			for(uint16_t j = 0, k = 0; j < packed_patterndata_size; ++k) {
+			for(j = 0, k = 0; j < packed_patterndata_size; ++k) {
 				uint8_t note = READ_U8(offset + j);
 				xm_pattern_slot_t* slot = pat->slots + k;
 
@@ -272,7 +274,7 @@ char* xm_load_module(xm_context_t* ctx, const char* moddata, size_t moddata_leng
 	}
 
 	/* Read instruments */
-	for(uint16_t i = 0; i < ctx->module.num_instruments; ++i) {
+	for(i = 0; i < ctx->module.num_instruments; ++i) {
 		uint32_t sample_header_size = 0;
 		xm_instrument_t* instr = mod->instruments + i;
 
@@ -287,12 +289,12 @@ char* xm_load_module(xm_context_t* ctx, const char* moddata, size_t moddata_leng
 			instr->volume_envelope.num_points = READ_U8(offset + 225);
 			instr->panning_envelope.num_points = READ_U8(offset + 226);
 
-			for(uint8_t j = 0; j < instr->volume_envelope.num_points; ++j) {
+			for(j = 0; j < instr->volume_envelope.num_points; ++j) {
 				instr->volume_envelope.points[j].frame = READ_U16(offset + 129 + 4 * j);
 				instr->volume_envelope.points[j].value = READ_U16(offset + 129 + 4 * j + 2);
 			}
 
-			for(uint8_t j = 0; j < instr->panning_envelope.num_points; ++j) {
+			for(j = 0; j < instr->panning_envelope.num_points; ++j) {
 				instr->panning_envelope.points[j].frame = READ_U16(offset + 177 + 4 * j);
 				instr->panning_envelope.points[j].value = READ_U16(offset + 177 + 4 * j + 2);
 			}
@@ -335,7 +337,7 @@ char* xm_load_module(xm_context_t* ctx, const char* moddata, size_t moddata_leng
 		/* Instrument header size */
 		offset += READ_U32(offset);
 
-		for(uint16_t j = 0; j < instr->num_samples; ++j) {
+		for(j = 0; j < instr->num_samples; ++j) {
 			/* Read sample header */
 			xm_sample_t* sample = instr->samples + j;
 
@@ -377,21 +379,21 @@ char* xm_load_module(xm_context_t* ctx, const char* moddata, size_t moddata_leng
 			offset += sample_header_size;
 		}
 
-		for(uint16_t j = 0; j < instr->num_samples; ++j) {
+		for(j = 0; j < instr->num_samples; ++j) {
 			/* Read sample data */
 			xm_sample_t* sample = instr->samples + j;
 			uint32_t length = sample->length;
 
 			if(sample->bits == 16) {
 				int16_t v = 0;
-				for(uint32_t k = 0; k < length; ++k) {
+				for(k = 0; k < length; ++k) {
 					v = v + (int16_t)READ_U16(offset + (k << 1));
 					sample->data[k] = (float)v / (float)(1 << 15);
 				}
 				offset += sample->length << 1;
 			} else {
 				int8_t v = 0;
-				for(uint32_t k = 0; k < length; ++k) {
+				for(k = 0; k < length; ++k) {
 					v = v + (int8_t)READ_U8(offset + k);
 					sample->data[k] = (float)v / (float)(1 << 7);
 				}

@@ -273,7 +273,7 @@ static void xm_volume_slide(xm_channel_context_t* ch, uint8_t rawval) {
 	}
 }
 
-static float xm_envelope_lerp(xm_envelope_point_t* restrict a, xm_envelope_point_t* restrict b, uint16_t pos) {
+static float xm_envelope_lerp(xm_envelope_point_t* a, xm_envelope_point_t* b, uint16_t pos) {
 	/* Linear interpolation between two envelope points */
 	if(pos <= a->frame) return a->value;
 	else if(pos >= b->frame) return b->value;
@@ -334,7 +334,7 @@ static float xm_period(xm_context_t* ctx, float note) {
 }
 
 static float xm_frequency(xm_context_t* ctx, float period, float note_offset) {
-	uint8_t a;
+	uint8_t a, i;
 	int8_t octave;
 	float note;
 	uint16_t p1, p2;
@@ -363,7 +363,7 @@ static float xm_frequency(xm_context_t* ctx, float period, float note_offset) {
 		}
 
 		/* Find the smallest note closest to the current period */
-		for(uint8_t i = 0; i < 12; ++i) {
+		for(i = 0; i < 12; ++i) {
 			p1 = amiga_frequencies[i], p2 = amiga_frequencies[i + 1];
 
 			if(octave > 0) {
@@ -845,6 +845,7 @@ static void xm_key_off(xm_channel_context_t* ch) {
 }
 
 static void xm_row(xm_context_t* ctx) {
+    uint8_t i;
 	if(ctx->position_jump) {
 		ctx->current_table_index = ctx->jump_dest;
 		ctx->current_row = ctx->jump_row;
@@ -864,7 +865,7 @@ static void xm_row(xm_context_t* ctx) {
 	bool in_a_loop = false;
 
 	/* Read notes… */
-	for(uint8_t i = 0; i < ctx->module.num_channels; ++i) {
+	for(i = 0; i < ctx->module.num_channels; ++i) {
 		xm_pattern_slot_t* s = cur->slots + ctx->current_row * ctx->module.num_channels + i;
 		xm_channel_context_t* ch = ctx->channels + i;
 
@@ -970,11 +971,12 @@ static void xm_envelopes(xm_channel_context_t* ch) {
 }
 
 static void xm_tick(xm_context_t* ctx) {
+    uint8_t i;
 	if(ctx->current_tick == 0) {
 		xm_row(ctx);
 	}
 
-	for(uint8_t i = 0; i < ctx->module.num_channels; ++i) {
+	for(i = 0; i < ctx->module.num_channels; ++i) {
 		xm_channel_context_t* ch = ctx->channels + i;
 
 		xm_envelopes(ch);
@@ -1332,6 +1334,8 @@ static float xm_next_of_sample(xm_channel_context_t* ch) {
 }
 
 static void xm_sample(xm_context_t* ctx, float* left, float* right) {
+    uint8_t i;
+
 	if(ctx->remaining_samples_in_tick <= 0) {
 		xm_tick(ctx);
 	}
@@ -1344,7 +1348,7 @@ static void xm_sample(xm_context_t* ctx, float* left, float* right) {
 		return;
 	}
 
-	for(uint8_t i = 0; i < ctx->module.num_channels; ++i) {
+	for(i = 0; i < ctx->module.num_channels; ++i) {
 		xm_channel_context_t* ch = ctx->channels + i;
 
 		if(ch->instrument == NULL || ch->sample == NULL || ch->sample_position < 0) {
@@ -1377,9 +1381,9 @@ static void xm_sample(xm_context_t* ctx, float* left, float* right) {
 }
 
 void xm_generate_samples(xm_context_t* ctx, float* output, size_t numsamples) {
+    size_t i;
 	ctx->generated_samples += numsamples;
-
-	for(size_t i = 0; i < numsamples; i++) {
+	for(i = 0; i < numsamples; i++) {
 		xm_sample(ctx, output + (2 * i), output + (2 * i + 1));
 	}
 }
