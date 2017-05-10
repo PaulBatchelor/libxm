@@ -1,3 +1,12 @@
+This is now a fork of libxm, with some tweaks to make the build system 
+simpler. The differences include:
+
+- Using vanilla Makefiles instead of CMake
+- Moving away from C99/C11 extensions
+- Moving towards ANSI-compliant code (we'll see how this one goes). 
+- An implementation of libxm as an extern Sporth Unit Generator
+
+
 libxm
 =====
 
