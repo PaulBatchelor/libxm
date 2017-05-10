@@ -1,6 +1,6 @@
 _xm "./xm.so" fl
 
-_tick _clock "milky.xm" _xm fe
+_clock _out "milky.xm" _xm fe
 
 0 _out tblsize _out ftsum
 
