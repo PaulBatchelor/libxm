@@ -1387,3 +1387,51 @@ void xm_generate_samples(xm_context_t* ctx, float* output, size_t numsamples) {
 		xm_sample(ctx, output + (2 * i), output + (2 * i + 1));
 	}
 }
+
+void xm_generate_slice(xm_context_t* ctx, float* output, float *tick)
+{
+    uint8_t i;
+    float fval;
+    float fgvol;
+
+	if(ctx->remaining_samples_in_tick <= 0) {
+        if(ctx->current_tick == 0) {
+            *tick = 1.0;
+        }
+		xm_tick(ctx);
+	} else {
+        *tick = 0;
+    }
+	ctx->remaining_samples_in_tick--;
+
+	if(ctx->max_loop_count > 0 && ctx->loop_count >= ctx->max_loop_count) {
+		return;
+	}
+
+    fgvol = ctx->global_volume * ctx->amplification; 
+	for(i = 0; i < ctx->module.num_channels; ++i) {
+		xm_channel_context_t* ch = ctx->channels + i;
+
+		if(ch->instrument == NULL || 
+           ch->sample == NULL || 
+           ch->sample_position < 0) {
+			continue;
+		}
+
+		fval = xm_next_of_sample(ch);
+
+		if(!ch->muted && !ch->instrument->muted) {
+		    output[i] = fval * ch->actual_volume * fgvol;
+		} else {
+		    output[i] = 0;	
+        }
+
+#if XM_RAMPING
+		ch->frame_count++;
+		XM_SLIDE_TOWARDS(ch->actual_volume, ch->target_volume, ctx->volume_ramp);
+		XM_SLIDE_TOWARDS(ch->actual_panning, ch->target_panning, ctx->panning_ramp);
+#endif
+	}
+
+
+}

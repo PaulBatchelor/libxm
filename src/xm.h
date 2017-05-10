@@ -221,4 +221,12 @@ float xm_get_volume_of_channel(xm_context_t*, uint16_t);
  */
 float xm_get_panning_of_channel(xm_context_t*, uint16_t);
 
+/** Generates a single-sample "slice" of all the channels .
+ * Useful if you want to process channels individually. Tick
+ * generates a clock signal from the XM player. 
+ *
+ * @note this does not preserve panning. buffer should be the size of
+ * the number of channels.
+ */
+void xm_generate_slice(xm_context_t*, float *, float*);
 #endif
