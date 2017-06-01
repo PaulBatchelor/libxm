@@ -122,7 +122,7 @@ static float xm_waveform(xm_waveform_type_t waveform, uint8_t step) {
 	case XM_SINE_WAVEFORM:
 		/* Why not use a table? For saving space, and because there's
 		 * very very little actual performance gain. */
-		return -sinf(2.f * 3.141592f * (float)step / (float)0x40);
+		return -sin(2.f * 3.141592f * (float)step / (float)0x40);
 
 	case XM_RAMP_DOWN_WAVEFORM:
 		/* Ramp down: 1.0f when step = 0; -1.0f when step = 0x40 */
@@ -295,7 +295,7 @@ static float xm_linear_period(float note) {
 }
 
 static float xm_linear_frequency(float period) {
-	return 8363.f * powf(2.f, (4608.f - period) / 768.f);
+	return 8363.f * pow(2.f, (4608.f - period) / 768.f);
 }
 
 static float xm_amiga_period(float note) {
@@ -1198,7 +1198,7 @@ static void xm_tick(xm_context_t* ctx) {
 		float panning, volume;
 		
 		panning = ch->panning +
-			(ch->panning_envelope_panning - .5f) * (.5f - fabsf(ch->panning - .5f)) * 2.0f;
+			(ch->panning_envelope_panning - .5f) * (.5f - fabs(ch->panning - .5f)) * 2.0f;
 
 		if(ch->tremor_on) {
 		        volume = .0f;
