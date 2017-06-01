@@ -36,6 +36,7 @@ typedef struct {
     xm_context_t *ctx;
     sp_ftbl *chan;
     SPFLOAT *tick;
+    SPFLOAT *bpm;
 } sporth_xm_data;
 
 static void create_context_from_file(xm_context_t** ctx, uint32_t rate, const char* filename) {
@@ -88,22 +89,26 @@ static void create_context_from_file(xm_context_t** ctx, uint32_t rate, const ch
 	munmap(data, size);
 	close(xmfiledes);
 }
-
 static int sporth_xm(plumber_data *pd, sporth_stack *stack, void **ud)
 {
     sporth_xm_data *xm_d;
     const char *tick;
     const char *chan;
     const char *filename;
+    const char *bpmvar;
+    uint16_t tempo;
+    uint16_t bpm;
+
     switch(pd->mode) {
         case PLUMBER_CREATE:
-            if(sporth_check_args(stack, "sss") != SPORTH_OK) {
+            if(sporth_check_args(stack, "ssss") != SPORTH_OK) {
                 fprintf(stderr,"XM: not enough args\n");
                 stack->error++;
                 return PLUMBER_NOTOK;
             }
             filename = sporth_stack_pop_string(stack);
             chan = sporth_stack_pop_string(stack);
+            bpmvar = sporth_stack_pop_string(stack);
             tick = sporth_stack_pop_string(stack);
             xm_d = malloc(sizeof(sporth_xm_data));
             create_context_from_file(&xm_d->ctx, pd->sp->sr, filename);
@@ -117,8 +122,10 @@ static int sporth_xm(plumber_data *pd, sporth_stack *stack, void **ud)
                     xm_get_number_of_channels(xm_d->ctx));
             plumber_ftmap_add(pd, chan, xm_d->chan);
             plumber_create_var(pd, tick, &xm_d->tick);
+            plumber_create_var(pd, bpmvar, &xm_d->bpm);
             break;
         case PLUMBER_INIT:
+            sporth_stack_pop_string(stack);
             sporth_stack_pop_string(stack);
             sporth_stack_pop_string(stack);
             sporth_stack_pop_string(stack);
@@ -130,6 +137,8 @@ static int sporth_xm(plumber_data *pd, sporth_stack *stack, void **ud)
                 xm_generate_slice(xm_d->ctx, 
                         xm_d->chan->tbl, 
                         xm_d->tick);
+                xm_get_playing_speed(xm_d->ctx, &bpm, &tempo);
+                *xm_d->bpm = bpm;
             }
             break;
 
