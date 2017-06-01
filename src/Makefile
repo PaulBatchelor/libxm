@@ -1,5 +1,5 @@
 OBJ=context.o load.o play.o xm.o
-CFLAGS=-DXM_LINEAR_INTERPOLATION=1 -DXM_DEBUG=0 -fPIC -shared
+CFLAGS=-DXM_LINEAR_INTERPOLATION=1 -DXM_DEBUG=0 -fPIC -shared -ansi -Wall
 LDFLAGS=
 
 default: libxm.a

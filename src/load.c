@@ -20,7 +20,7 @@
 #define READ_U32(offset) ((uint32_t)READ_U16(offset) | ((uint32_t)READ_U16((offset) + 2) << 16))
 #define READ_MEMCPY(ptr, offset, length) memcpy_pad(ptr, length, moddata, moddata_length, offset)
 
-static inline void memcpy_pad(void* dst, size_t dst_len, const void* src, size_t src_len, size_t offset) {
+static void memcpy_pad(void* dst, size_t dst_len, const void* src, size_t src_len, size_t offset) {
 	uint8_t* dst_c = dst;
 	const uint8_t* src_c = src;
 
